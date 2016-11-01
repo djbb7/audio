@@ -6,6 +6,7 @@
   "author": "Jere Vaara, Max Huttunen",
   "license": "MIT",
   "dependencies": {
+    "@google-cloud/speech": "^0.1.1",
     "babel": "^6.5.2",
     "babel-cli": "^6.18.0",
     "babel-core": "^6.18.0",
@@ -13,10 +14,12 @@
     "babel-preset-react": "^6.16.0",
     "body-parser": "^1.15.2",
     "express": "^4.14.0",
-    "google-speech-api": "^1.2.0",
+    "fluent-ffmpeg": "^2.1.0",
+    "fs": "0.0.1-security",
     "multer": "^1.2.0",
     "node-fetch": "^1.6.3",
     "recorderjs": "^1.0.1",
+    "request": "^2.76.0",
     "superagent": "^2.3.0"
   },
   "scripts": {
