@@ -4,8 +4,11 @@ var bodyParser = require('body-parser');
 var request = require('request');
 var fs = require('fs');
 
+var speech = require('@google-cloud/speech')({
+    projectId: process.env.PROJECT_ID,
+    keyFilename: process.env.KEY_FILENAME
+});
 
-var speech = require('@google-cloud/speech')();
 var ffmpeg = require('fluent-ffmpeg');
 var uuid = require('node-uuid');
 
@@ -29,6 +32,8 @@ app
 .post('/', (req, res) => {
   //download voicenote to disk with unique name
   var output = tmpDir + uuid.v4() + ".flac";
+  console.log("target file: "+output);
+  console.log("received url: "+req.body.audioFileUrl);
   ffmpeg(request(req.body.audioFileUrl))
     .output(output)
     .outputOptions(['-ac 1', '-ar 16000']) //1 channel, sampleRate 16.000
