@@ -1,23 +1,20 @@
-var express = require('express');
-var multer = require('multer');
-var bodyParser = require('body-parser');
-var request = require('request');
-var fs = require('fs');
+import express from 'express';
+import multer from 'multer';
+import bodyParser from 'body-parser';
+import request from 'request';
+import fs from 'fs';
+import uuid from 'node-uuid';
+import ffmpeg from 'fluent-ffmpeg';
 
-var speech = require('@google-cloud/speech')({
+import phonemes from './restaurants';
+
+const speech = require('@google-cloud/speech')({
     projectId: process.env.PROJECT_ID,
     keyFilename: process.env.KEY_FILENAME
 });
 
-var ffmpeg = require('fluent-ffmpeg');
-var uuid = require('node-uuid');
-
 //where to save telegram voice notes
-var tmpDir = './audios/';
-
-const opts = {
-  key: process.env.SPEECH_API_KEY
-}
+const tmpDir = './audios/';
 
 const app = express()
 const upload = multer()
@@ -30,28 +27,29 @@ app
   res.send('OK')
 })
 .post('/', (req, res) => {
-  //download voicenote to disk with unique name
-  var output = tmpDir + uuid.v4() + ".flac";
-  console.log("target file: "+output);
-  console.log("received url: "+req.body.audioFileUrl);
+  //save converted audio to disk with unique name
+  const audioFile = tmpDir + uuid.v4() + ".flac";
+  
+  //download and convert 
   ffmpeg(request(req.body.audioFileUrl))
-    .output(output)
+    .output(audioFile)
     .outputOptions(['-ac 1', '-ar 16000']) //1 channel, sampleRate 16.000
     .on('error', function(err) {
+      //TODO: how to handle error?
       console.log('An error occurred: ' + err.message);
     })
     .on('end', function() {
-      //file downloaded, send to Google Speech
-      syncRecognize(output, function(results){
+      //file converted, send to Google Speech
+      syncRecognize(audioFile, function(results){
         //results is the string containing the interpreted audio
         console.log(results);
 
-        //TODO: hamming distance to find closest match?
+        //TODO: edit distance to find closest match
 
         //TODO: respond with closest match
         
         //delete file
-        fs.unlink(output);
+        fs.unlink(audioFile);
       });
     })
     .run();
