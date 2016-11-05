@@ -1,4 +1,8 @@
-export const phonemes = [
+import distance from "./distance"
+
+export default class {
+	constructor(){
+		this.phonemes = [
 	{
 		"name": "Aalto Valimo",
 		"id": 8,
@@ -186,4 +190,26 @@ export const phonemes = [
 			"ylioppilasaukio"
 		]
 	}
-]
+	]
+	}
+
+	getClosestMatch(str) {
+		var bestMatch = Infinity;
+		var index = -1;
+		for (let i = 0; i < this.phonemes.length; i++) {
+			for (let j = 0; j < this.phonemes[i].soundsLike.length; j++) {
+				let lDistance = distance(str, this.phonemes[i].soundsLike[j]);
+				if ( lDistance < bestMatch ){
+					bestMatch = lDistance;
+					index = i;
+				}
+			}
+		}
+		return {
+			"id" : this.phonemes[index].id,
+			"name" : this.phonemes[index].name
+		};
+	}
+
+
+}

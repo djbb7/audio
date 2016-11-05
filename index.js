@@ -6,7 +6,7 @@ import fs from 'fs';
 import uuid from 'node-uuid';
 import ffmpeg from 'fluent-ffmpeg';
 
-import phonemes from './restaurants';
+import restaurants from './restaurants';
 
 const speech = require('@google-cloud/speech')({
     projectId: process.env.PROJECT_ID,
@@ -16,8 +16,12 @@ const speech = require('@google-cloud/speech')({
 //where to save telegram voice notes
 const tmpDir = './audios/';
 
-const app = express()
-const upload = multer()
+//mac duration of audio
+const maxDuration = 10;
+
+const app = express();
+const upload = multer();
+const Restaurants = new restaurants();
 
 app
 .use(express.static('./public'))
@@ -27,6 +31,11 @@ app
   res.send('OK')
 })
 .post('/', (req, res) => {
+  //check if duration is not too long
+  if(req.body.duration > maxDuration){
+    //TODO: return error
+  }
+
   //save converted audio to disk with unique name
   const audioFile = tmpDir + uuid.v4() + ".flac";
   
@@ -42,12 +51,14 @@ app
       //file converted, send to Google Speech
       syncRecognize(audioFile, function(results){
         //results is the string containing the interpreted audio
-        console.log(results);
 
-        //TODO: edit distance to find closest match
+        //'edit' distance to find closest match
+        let match = Restaurants.getClosestMatch(results);
 
-        //TODO: respond with closest match
-        
+        console.log("Google heard: '"+results+"', we matched '"+match.name+"'");
+
+        res.send(match);
+
         //delete file
         fs.unlink(audioFile);
       });
