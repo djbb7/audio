@@ -1,4 +1,5 @@
 node_modules/*
+audios/
 
 #exception to the rule
 !audios/.gitkeep
