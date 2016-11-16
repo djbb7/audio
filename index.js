@@ -13,10 +13,10 @@ const speech = require('@google-cloud/speech')({
     keyFilename: process.env.KEY_FILENAME
 });
 
-//where to save telegram voice notes
+// where to save telegram voice notes
 const tmpDir = './audios/';
 
-//mac duration of audio
+// max duration of audio in seconds
 const maxDuration = 10;
 
 const app = express();
@@ -30,43 +30,46 @@ app
   console.log('Received files: ' + req.file)
   res.send('OK')
 })
-.post('/', (req, res) => {
-  //check if duration is not too long
+.post('/', (req, res, next) => {
+  // check if duration is not too long
   if(req.body.duration > maxDuration){
-    //TODO: return error
+    console.log('Error: duration exceeded');
+    return next({code: 400, message: `The audio length should not exceed ${maxDuration} seconds.`});
   }
 
-  //save converted audio to disk with unique name
+  // save converted audio to disk with unique name
   const audioFile = tmpDir + uuid.v4() + ".flac";
   
-  //download and convert 
+  // download and convert 
   ffmpeg(request(req.body.audioFileUrl))
     .output(audioFile)
     .outputOptions(['-ac 1', '-ar 16000']) //1 channel, sampleRate 16.000
     .on('error', function(err) {
-      //TODO: how to handle error?
       console.log('An error occurred: ' + err.message);
+      return next({code: 400, message: 'Error converting audio.'});
     })
     .on('end', function() {
-      //file converted, send to Google Speech
-      syncRecognize(audioFile, function(results){
-        //results is the string containing the interpreted audio
+      // file converted, send to Google Speech
+      syncRecognize(audioFile, function(result){
+        // results is the string containing the interpreted audio
 
-        //'edit' distance to find closest match
-        let match = Restaurants.getClosestMatch(results);
+        // 'edit' distance to find closest match
+        let match = Restaurants.getClosestMatch(result);
 
-        console.log("Google heard: '"+results+"', we matched '"+match.name+"'");
+        console.log("Google heard: '"+result+"', we matched '"+match.name+"'");
 
-        res.send(match);
+        res.send({'id': match.id, 'name': match.name, 'heard': result});
 
-        //delete file
+        // delete file
         fs.unlink(audioFile);
       });
     })
     .run();
 
   })
-.listen(process.env.PORT || 5000)
+.use((err, req, res, next) => {res.status(err.code).json(err) });
+
+app.listen(process.env.PORT || 5000)
 
 
 /*
